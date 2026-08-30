@@ -6,14 +6,14 @@
 
 * **DEVELOPER**: NJITI NGAFOR KAREN
 * **EMAIL:** njitikaren@gmail.com
-* **GitHub Profile:** [@NJITI KAREN](https://github.com/NJITI KAREN)
+* **GitHub Profile:** [@njitikaren](https://github.com/njitikaren)
 * **Institution:** Higher Institute of Management Studies (HIMS) Buea
 * **Department:** Software Engineering
 * **Live Web App:** [Launch Streamlit Application](https://digit-and-character-recognition.streamlit.app)
 
 ## Key Features
 * **Framework-Free Engine:** Custom Multi-Layer Perceptron (MLP) with manual forward propagation, backpropagation, ReLU, and Softmax activations.
-* **Interactive Canvas:** Draw freehand digits and character ($0$–$9$) directly on the screen for real-time inference.
+* **Interactive Canvas:** Draw freehand digits and character (0-9, A-Z) directly on the screen for real-time inference.
 * **Dataset Explorer:** Browse raw $28 \times 28$ grayscale benchmark samples from the MNIST dataset(use for digits recognition) and EMNIST dataset(use for character recognition).
 
 ## Setup & Local Run
