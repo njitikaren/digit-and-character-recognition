@@ -344,7 +344,7 @@ with tab3:
 
     X_emnist, y_emnist = load_or_augment_emnist_samples()
 
-    fig_grid, axes = plt.subplots(7, 10, figsize=(14, 8))
+    fig_grid, axes = plt.subplots(4, 7, figsize=(14, 8))
     axes = axes.flatten()
 
     for idx, char in enumerate(ALPHABET):
