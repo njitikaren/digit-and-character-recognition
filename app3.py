@@ -1,4 +1,6 @@
 import os
+import matplotlib
+matplotlib.use("Agg")  # Force headless non-interactive backend for Cloud deployment
 import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
@@ -178,27 +180,32 @@ def forward_pass(X, W1, b1, W2, b2):
 
 
 def preprocess_canvas_image(canvas_array):
-    """Preprocessing Pipeline: Converts RGBA canvas array into a normalized
-    (1, 784) grayscale vector centered by bounding box.
+    """Robust Cloud Preprocessing Pipeline: Evaluates both RGB intensity and 
+    Alpha channel masks to ensure freehand drawings render on remote browsers.
     """
     if canvas_array is None or canvas_array.size == 0:
         return None
 
-    # Handle RGBA array extraction from st_canvas
     if canvas_array.ndim == 3:
         rgb = canvas_array[:, :, :3]
-        gray = np.mean(rgb, axis=2)
         
-        if np.max(gray) < 20:
+        # Check alpha channel if provided by backend browser engine
+        if canvas_array.shape[2] == 4:
+            alpha = canvas_array[:, :, 3]
+            gray = np.maximum(np.max(rgb, axis=2), alpha)
+        else:
+            gray = np.max(rgb, axis=2)
+
+        if np.max(gray) < 10:  # Noise threshold cutoff
             return None
-        
+
         img = Image.fromarray(gray.astype(np.uint8), mode="L")
     else:
-        if np.max(canvas_array) < 20:
+        if np.max(canvas_array) < 10:
             return None
         img = Image.fromarray(canvas_array.astype(np.uint8), mode="L")
 
-    # Crop drawing to bounding box
+    # Crop drawing to active bounding box
     bbox = img.getbbox()
     if bbox is None:
         return None
@@ -206,7 +213,7 @@ def preprocess_canvas_image(canvas_array):
     img_cropped = img.crop(bbox)
     img_cropped.thumbnail((20, 20), Image.Resampling.LANCZOS)
 
-    # Center in 28x28 grayscale array
+    # Center inside 28x28 matrix
     new_img = Image.new("L", (28, 28), 0)
     upper_left = (
         (28 - img_cropped.width) // 2,
@@ -214,8 +221,7 @@ def preprocess_canvas_image(canvas_array):
     )
     new_img.paste(img_cropped, upper_left)
 
-    img_matrix = np.array(new_img, dtype=np.float32) / 255.0
-    return img_matrix.reshape(1, 784)
+    return (np.array(new_img, dtype=np.float32) / 255.0).reshape(1, 784)
 
 
 # ==============================================================================
@@ -240,8 +246,10 @@ with tab1:
         st.subheader(" Freehand Canvas Input")
         if mode == "Digit (0-9)":
             st.write("Draw any digit (**0 to 9**) inside the canvas below:")
+            canvas_key = "digit_mode_canvas"
         else:
             st.write("Draw any capital letter (**A to Z**) inside the canvas below:")
+            canvas_key = "character_mode_canvas"
 
         canvas_result = st_canvas(
             fill_color="rgba(0, 0, 0, 0)",
@@ -252,7 +260,7 @@ with tab1:
             width=200,
             drawing_mode="freedraw",
             update_streamlit=True,
-            key=f"drawable_canvas_{mode.replace(' ', '_')}",
+            key=canvas_key,
         )
 
     with col_right:
@@ -285,7 +293,7 @@ with tab1:
                     with m2:
                         st.metric("Softmax Confidence", f"{confidence:.2f}%")
 
-                    # Explicit Figure creation and display
+                    # Generate and display Softmax chart
                     fig_chart, ax_chart = plt.subplots(figsize=(6, 3))
                     bars = ax_chart.bar(range(10), probabilities, color="#4CAF50")
                     bars[predicted_class].set_color("#FF5722")
@@ -323,7 +331,7 @@ with tab1:
                         with m2:
                             st.metric("Softmax Confidence", f"{confidence:.2f}%")
 
-                        # --- FULL A-Z BAR CHART ---
+                        # Generate and display Full A-Z Bar Chart
                         fig_chart, ax_chart = plt.subplots(figsize=(10, 4))
                         bars = ax_chart.bar(ALPHABET, probabilities, color="#2196F3")
                         bars[predicted_idx].set_color("#E91E63")
