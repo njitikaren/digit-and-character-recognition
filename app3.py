@@ -181,10 +181,20 @@ def preprocess_canvas_image(canvas_array):
     """Preprocessing Pipeline: Converts RGBA canvas array into a normalized
     (1, 784) grayscale vector centered by bounding box.
     """
-    img = Image.fromarray(canvas_array.astype("uint8")).convert("L")
+    # Convert RGBA array from st_canvas into grayscale image
+    if canvas_array.ndim == 3 and canvas_array.shape[-1] == 4:
+        img = Image.fromarray(canvas_array.astype("uint8")).convert("L")
+    else:
+        img = Image.fromarray(canvas_array.astype("uint8"))
+
+    # Check if user has actually drawn non-zero white pixels
+    img_np = np.array(img)
+    if np.max(img_np) == 0:
+        return None  # Canvas is completely blank
+
     bbox = img.getbbox()
     if bbox is None:
-        return None  # Canvas is blank
+        return None
 
     img_cropped = img.crop(bbox)
     img_cropped.thumbnail((20, 20), Image.Resampling.LANCZOS)
@@ -233,6 +243,7 @@ with tab1:
             height=200,
             width=200,
             drawing_mode="freedraw",
+            update_streamlit=True,  # Triggers real-time update on stroke release
             key=f"drawable_canvas_{mode}",
         )
 
