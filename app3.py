@@ -181,17 +181,24 @@ def preprocess_canvas_image(canvas_array):
     """Preprocessing Pipeline: Converts RGBA canvas array into a normalized
     (1, 784) grayscale vector centered by bounding box.
     """
-    # Convert RGBA array from st_canvas into grayscale image
-    if canvas_array.ndim == 3 and canvas_array.shape[-1] == 4:
-        img = Image.fromarray(canvas_array.astype("uint8")).convert("L")
+    if canvas_array is None or canvas_array.size == 0:
+        return None
+
+    # Check color channels for non-zero drawn pixels
+    if canvas_array.ndim == 3:
+        rgb = canvas_array[:, :, :3]
+        if np.max(rgb) == 0:
+            return None  # Canvas is blank
+        
+        # Max intensity across color channels to extract white strokes on dark background
+        gray_arr = np.max(rgb, axis=2).astype(np.uint8)
+        img = Image.fromarray(gray_arr, mode="L")
     else:
-        img = Image.fromarray(canvas_array.astype("uint8"))
+        if np.max(canvas_array) == 0:
+            return None
+        img = Image.fromarray(canvas_array.astype("uint8"), mode="L")
 
-    # Check if user has actually drawn non-zero white pixels
-    img_np = np.array(img)
-    if np.max(img_np) == 0:
-        return None  # Canvas is completely blank
-
+    # Crop drawing to bounding box
     bbox = img.getbbox()
     if bbox is None:
         return None
@@ -199,6 +206,7 @@ def preprocess_canvas_image(canvas_array):
     img_cropped = img.crop(bbox)
     img_cropped.thumbnail((20, 20), Image.Resampling.LANCZOS)
 
+    # Center in 28x28 grayscale array
     new_img = Image.new("L", (28, 28), 0)
     upper_left = (
         (28 - img_cropped.width) // 2,
@@ -243,20 +251,16 @@ with tab1:
             height=200,
             width=200,
             drawing_mode="freedraw",
-            update_streamlit=True,  # Triggers real-time update on stroke release
-            key=f"drawable_canvas_{mode}",
+            update_streamlit=True,
+            key=f"drawable_canvas_{mode.replace(' ', '_')}",
         )
 
     with col_right:
         st.subheader(" Real-Time Neural Analytics")
 
-        # Safely extract image_data inside try-except block
         img_data = None
-        if canvas_result is not None:
-            try:
-                img_data = canvas_result.image_data
-            except RuntimeError:
-                img_data = None
+        if canvas_result is not None and canvas_result.image_data is not None:
+            img_data = canvas_result.image_data
 
         if img_data is not None and img_data.size > 0:
             input_vector = preprocess_canvas_image(img_data)
