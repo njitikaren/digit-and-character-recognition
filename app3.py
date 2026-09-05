@@ -240,7 +240,7 @@ with tab1:
     with col_right:
         st.subheader("2. Real-Time Neural Analytics")
 
-       if (
+if (
     canvas_result is not None
     and getattr(canvas_result, "image_data", None) is not None
     and canvas_result.image_data.size > 0
