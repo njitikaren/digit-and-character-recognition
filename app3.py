@@ -186,12 +186,9 @@ def preprocess_canvas_image(canvas_array):
 
     # Handle RGBA array extraction from st_canvas
     if canvas_array.ndim == 3:
-        # Extract RGB channels
         rgb = canvas_array[:, :, :3]
-        # Calculate grayscale values based on pixel brightness
         gray = np.mean(rgb, axis=2)
         
-        # Check if any pixels are drawn (above background noise)
         if np.max(gray) < 20:
             return None
         
@@ -288,20 +285,23 @@ with tab1:
                     with m2:
                         st.metric("Softmax Confidence", f"{confidence:.2f}%")
 
-                    fig, ax = plt.subplots(figsize=(6, 3))
-                    bars = ax.bar(range(10), probabilities, color="#4CAF50")
+                    # Explicit Figure creation and display
+                    fig_chart, ax_chart = plt.subplots(figsize=(6, 3))
+                    bars = ax_chart.bar(range(10), probabilities, color="#4CAF50")
                     bars[predicted_class].set_color("#FF5722")
 
-                    ax.set_xticks(range(10))
-                    ax.set_xlabel("Digit Class (0-9)", fontsize=12, fontweight="bold")
-                    ax.set_ylabel("Probability", fontsize=12, fontweight="bold")
-                    ax.set_ylim([0, 1.0])
-                    ax.set_title(
+                    ax_chart.set_xticks(range(10))
+                    ax_chart.set_xlabel("Digit Class (0-9)", fontsize=10, fontweight="bold")
+                    ax_chart.set_ylabel("Probability", fontsize=10, fontweight="bold")
+                    ax_chart.set_ylim([0, 1.0])
+                    ax_chart.set_title(
                         "Digit Softmax Output Distribution",
-                        fontsize=12,
+                        fontsize=11,
                         fontweight="bold",
                     )
-                    st.pyplot(fig)
+                    
+                    st.pyplot(fig_chart, clear_figure=True)
+                    plt.close(fig_chart)
 
                 else:  # Character (A-Z) Mode
                     if W1_char is None:
@@ -324,25 +324,26 @@ with tab1:
                             st.metric("Softmax Confidence", f"{confidence:.2f}%")
 
                         # --- FULL A-Z BAR CHART ---
-                        fig, ax = plt.subplots(figsize=(10, 4))
-                        bars = ax.bar(ALPHABET, probabilities, color="#2196F3")
+                        fig_chart, ax_chart = plt.subplots(figsize=(10, 4))
+                        bars = ax_chart.bar(ALPHABET, probabilities, color="#2196F3")
                         bars[predicted_idx].set_color("#E91E63")
 
-                        ax.set_xticks(range(26))
-                        ax.set_xticklabels(ALPHABET, fontsize=10)
-                        ax.set_xlabel(
-                            "Character Class (A-Z)", fontsize=12, fontweight="bold"
+                        ax_chart.set_xticks(range(26))
+                        ax_chart.set_xticklabels(ALPHABET, fontsize=9)
+                        ax_chart.set_xlabel(
+                            "Character Class (A-Z)", fontsize=10, fontweight="bold"
                         )
-                        ax.set_ylabel("Softmax Probability", fontsize=12, fontweight="bold")
-                        ax.set_ylim([0, 1.0])
-                        ax.set_title(
+                        ax_chart.set_ylabel("Softmax Probability", fontsize=10, fontweight="bold")
+                        ax_chart.set_ylim([0, 1.0])
+                        ax_chart.set_title(
                             "EMNIST Full Character Softmax Output Distribution (A-Z)",
-                            fontsize=12,
+                            fontsize=11,
                             fontweight="bold",
                         )
-                        ax.grid(axis="y", linestyle="--", alpha=0.5)
+                        ax_chart.grid(axis="y", linestyle="--", alpha=0.5)
 
-                        st.pyplot(fig)
+                        st.pyplot(fig_chart, clear_figure=True)
+                        plt.close(fig_chart)
         else:
             st.info("Draw on the canvas to trigger real-time neural network inference.")
 
@@ -366,7 +367,8 @@ with tab2:
         ax.axis("off")
 
     plt.tight_layout()
-    st.pyplot(fig_grid)
+    st.pyplot(fig_grid, clear_figure=True)
+    plt.close(fig_grid)
 
 # --- TAB 3: EMNIST DATASET EXPLORER ---
 with tab3:
@@ -387,9 +389,9 @@ with tab3:
         ax.set_title(f"'{char}'", fontsize=14, fontweight="bold")
         ax.axis("off")
 
-    # Turn off leftover empty subplots in the 4x7 grid
     for idx in range(26, len(axes)):
         axes[idx].axis("off")
 
     plt.tight_layout()
-    st.pyplot(fig_grid)
+    st.pyplot(fig_grid, clear_figure=True)
+    plt.close(fig_grid)
