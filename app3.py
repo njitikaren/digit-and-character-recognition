@@ -18,7 +18,7 @@ st.set_page_config(
 st.title(" Framework-Free MLP Neural Network Suite")
 st.header(
     "Custom Deep Learning Engine built purely with Python & NumPy (Linear"
-    " Algebra & Calculus) without TensorFlow, PyTorch, or Keras." 
+    " Algebra & Calculus) without TensorFlow, PyTorch, or Keras."
 )
 
 # ==============================================================================
@@ -184,14 +184,23 @@ def preprocess_canvas_image(canvas_array):
     if canvas_array is None or canvas_array.size == 0:
         return None
 
-    # Check color channels for non-zero drawn pixels
+    # Handle RGBA image arrays correctly
     if canvas_array.ndim == 3:
         rgb = canvas_array[:, :, :3]
-        if np.max(rgb) == 0:
-            return None  # Canvas is blank
-        
-        # Max intensity across color channels to extract white strokes on dark background
-        gray_arr = np.max(rgb, axis=2).astype(np.uint8)
+
+        if canvas_array.shape[2] == 4:
+            alpha = canvas_array[:, :, 3]
+            # Handle transparent drawings or white strokes
+            if np.max(alpha) > 0 and np.max(rgb) == 0:
+                gray_arr = alpha.astype(np.uint8)
+            else:
+                gray_arr = np.max(rgb, axis=2).astype(np.uint8)
+        else:
+            gray_arr = np.max(rgb, axis=2).astype(np.uint8)
+
+        if np.max(gray_arr) == 0:
+            return None  # Canvas is completely blank
+
         img = Image.fromarray(gray_arr, mode="L")
     else:
         if np.max(canvas_array) == 0:
