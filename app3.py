@@ -178,40 +178,28 @@ def forward_pass(X, W1, b1, W2, b2):
 
 
 def preprocess_canvas_image(canvas_array):
-    """
-    Preprocessing Pipeline: Converts RGBA canvas array into a normalized
+    """Preprocessing Pipeline: Converts RGBA canvas array into a normalized
     (1, 784) grayscale vector centered by bounding box.
     """
     if canvas_array is None or canvas_array.size == 0:
         return None
 
-    # Process 3D RGBA/RGB image arrays from frontend
+    # Handle RGBA array extraction from st_canvas
     if canvas_array.ndim == 3:
+        # Extract RGB channels
         rgb = canvas_array[:, :, :3]
+        # Calculate grayscale values based on pixel brightness
+        gray = np.mean(rgb, axis=2)
         
-        # Check if drawing contains alpha channel data
-        if canvas_array.shape[2] == 4:
-            alpha = canvas_array[:, :, 3]
-            # Use alpha channel if present, otherwise sum RGB intensity
-            if np.max(alpha) > 0:
-                gray_arr = np.where(alpha > 0, np.max(rgb, axis=2), 0).astype(np.uint8)
-                # Fallback if stroke was pure white over black
-                if np.max(gray_arr) == 0:
-                    gray_arr = alpha.astype(np.uint8)
-            else:
-                gray_arr = np.max(rgb, axis=2).astype(np.uint8)
-        else:
-            gray_arr = np.max(rgb, axis=2).astype(np.uint8)
-
-        # Threshold check to ignore minor noise/blank canvas
-        if np.max(gray_arr) < 10:
+        # Check if any pixels are drawn (above background noise)
+        if np.max(gray) < 20:
             return None
-            
-        img = Image.fromarray(gray_arr, mode="L")
+        
+        img = Image.fromarray(gray.astype(np.uint8), mode="L")
     else:
-        if np.max(canvas_array) < 10:
+        if np.max(canvas_array) < 20:
             return None
-        img = Image.fromarray(canvas_array.astype("uint8"), mode="L")
+        img = Image.fromarray(canvas_array.astype(np.uint8), mode="L")
 
     # Crop drawing to bounding box
     bbox = img.getbbox()
@@ -221,7 +209,7 @@ def preprocess_canvas_image(canvas_array):
     img_cropped = img.crop(bbox)
     img_cropped.thumbnail((20, 20), Image.Resampling.LANCZOS)
 
-    # Center inside 28x28 matrix
+    # Center in 28x28 grayscale array
     new_img = Image.new("L", (28, 28), 0)
     upper_left = (
         (28 - img_cropped.width) // 2,
@@ -231,6 +219,7 @@ def preprocess_canvas_image(canvas_array):
 
     img_matrix = np.array(new_img, dtype=np.float32) / 255.0
     return img_matrix.reshape(1, 784)
+
 
 # ==============================================================================
 # 4. DASHBOARD TAB NAVIGATION
@@ -258,7 +247,7 @@ with tab1:
             st.write("Draw any capital letter (**A to Z**) inside the canvas below:")
 
         canvas_result = st_canvas(
-            fill_color="#000000",
+            fill_color="rgba(0, 0, 0, 0)",
             stroke_width=16,
             stroke_color="#FFFFFF",
             background_color="#000000",
