@@ -19,7 +19,6 @@ st.title(" Framework-Free MLP Neural Network Suite")
 st.header(
     "Custom Deep Learning Engine built purely with Python & NumPy (Linear"
     " Algebra & Calculus) without TensorFlow, PyTorch, or Keras." 
-    
 )
 
 # ==============================================================================
@@ -238,90 +237,97 @@ with tab1:
         )
 
     with col_right:
-        st.subheader("2. Real-Time Neural Analytics")
+        st.subheader(" Real-Time Neural Analytics")
 
-if (
-    canvas_result is not None
-    and getattr(canvas_result, "image_data", None) is not None
-    and canvas_result.image_data.size > 0
-):
-    input_vector = preprocess_canvas_image(canvas_result.image_data)
+        # Safely extract image_data inside try-except block
+        img_data = None
+        if canvas_result is not None:
+            try:
+                img_data = canvas_result.image_data
+            except RuntimeError:
+                img_data = None
 
-    if input_vector is None:
-        st.info("Draw on the canvas to trigger real-time neural network inference.")
-    else:
-        if mode == "Digit (0-9)":
-            probabilities = forward_pass(
-                input_vector, W1_dig, b1_dig, W2_dig, b2_dig
-            )[0]
-            predicted_class = int(np.argmax(probabilities))
-            confidence = float(probabilities[predicted_class]) * 100
+        if img_data is not None and img_data.size > 0:
+            input_vector = preprocess_canvas_image(img_data)
 
-            m1, m2 = st.columns(2)
-            with m1:
-                st.metric("Predicted Digit", f"{predicted_class}")
-            with m2:
-                st.metric("Softmax Confidence", f"{confidence:.2f}%")
-
-            fig, ax = plt.subplots(figsize=(6, 3))
-            bars = ax.bar(range(10), probabilities, color="#4CAF50")
-            bars[predicted_class].set_color("#FF5722")
-
-            ax.set_xticks(range(10))
-            ax.set_xlabel("Digit Class (0-9)", fontsize=15, fontweight="bold")
-            ax.set_ylabel("Probability", fontsize=20, fontweight="bold")
-            ax.set_ylim([0, 1.0])
-            ax.set_title(
-                "Digit Softmax Output Distribution",
-                fontsize=12,
-                fontweight="bold",
-            )
-            st.pyplot(fig)
-
-        else:  # Character (A-Z) Mode
-            if W1_char is None:
-                st.warning(
-                    "Please upload 'emnist_weights.npz' to enable character predictions."
-                )
+            if input_vector is None:
+                st.info("Draw on the canvas to trigger real-time neural network inference.")
             else:
-                probabilities = forward_pass(
-                    input_vector, W1_char, b1_char, W2_char, b2_char
-                )[0]
-                predicted_idx = int(np.argmax(probabilities))
-                predicted_char = ALPHABET[predicted_idx]
-                confidence = float(probabilities[predicted_idx]) * 100
+                if mode == "Digit (0-9)":
+                    probabilities = forward_pass(
+                        input_vector, W1_dig, b1_dig, W2_dig, b2_dig
+                    )[0]
+                    predicted_class = int(np.argmax(probabilities))
+                    confidence = float(probabilities[predicted_class]) * 100
 
-                m1, m2 = st.columns(2)
-                with m1:
-                    st.metric("Predicted Character", f"{predicted_char}")
-                with m2:
-                    st.metric("Softmax Confidence", f"{confidence:.2f}%")
+                    m1, m2 = st.columns(2)
+                    with m1:
+                        st.metric("Predicted Digit", f"{predicted_class}")
+                    with m2:
+                        st.metric("Softmax Confidence", f"{confidence:.2f}%")
 
-                # --- FULL A-Z BAR CHART ---
-                fig, ax = plt.subplots(figsize=(10, 4))
-                bars = ax.bar(ALPHABET, probabilities, color="#2196F3")
-                bars[predicted_idx].set_color("#E91E63")
+                    fig, ax = plt.subplots(figsize=(6, 3))
+                    bars = ax.bar(range(10), probabilities, color="#4CAF50")
+                    bars[predicted_class].set_color("#FF5722")
 
-                ax.set_xticks(range(26))
-                ax.set_xticklabels(ALPHABET, fontsize=25)
-                ax.set_xlabel(
-                    "Character Class (A-Z)", fontsize=15, fontweight="bold"
-                )
-                ax.set_ylabel("Softmax Probability", fontsize=20, fontweight="bold")
-                ax.set_ylim([0, 1.0])
-                ax.set_title(
-                    "EMNIST Full Character Softmax Output Distribution (A-Z)",
-                    fontsize=18,
-                    fontweight="bold",
-                )
-                ax.grid(axis="y", linestyle="--", alpha=0.5)
+                    ax.set_xticks(range(10))
+                    ax.set_xlabel("Digit Class (0-9)", fontsize=12, fontweight="bold")
+                    ax.set_ylabel("Probability", fontsize=12, fontweight="bold")
+                    ax.set_ylim([0, 1.0])
+                    ax.set_title(
+                        "Digit Softmax Output Distribution",
+                        fontsize=12,
+                        fontweight="bold",
+                    )
+                    st.pyplot(fig)
 
-                st.pyplot(fig)
+                else:  # Character (A-Z) Mode
+                    if W1_char is None:
+                        st.warning(
+                            "Please upload 'emnist_weights.npz' to enable character"
+                            " predictions."
+                        )
+                    else:
+                        probabilities = forward_pass(
+                            input_vector, W1_char, b1_char, W2_char, b2_char
+                        )[0]
+                        predicted_idx = int(np.argmax(probabilities))
+                        predicted_char = ALPHABET[predicted_idx]
+                        confidence = float(probabilities[predicted_idx]) * 100
+
+                        m1, m2 = st.columns(2)
+                        with m1:
+                            st.metric("Predicted Character", f"{predicted_char}")
+                        with m2:
+                            st.metric("Softmax Confidence", f"{confidence:.2f}%")
+
+                        # --- FULL A-Z BAR CHART ---
+                        fig, ax = plt.subplots(figsize=(10, 4))
+                        bars = ax.bar(ALPHABET, probabilities, color="#2196F3")
+                        bars[predicted_idx].set_color("#E91E63")
+
+                        ax.set_xticks(range(26))
+                        ax.set_xticklabels(ALPHABET, fontsize=10)
+                        ax.set_xlabel(
+                            "Character Class (A-Z)", fontsize=12, fontweight="bold"
+                        )
+                        ax.set_ylabel("Softmax Probability", fontsize=12, fontweight="bold")
+                        ax.set_ylim([0, 1.0])
+                        ax.set_title(
+                            "EMNIST Full Character Softmax Output Distribution (A-Z)",
+                            fontsize=12,
+                            fontweight="bold",
+                        )
+                        ax.grid(axis="y", linestyle="--", alpha=0.5)
+
+                        st.pyplot(fig)
+        else:
+            st.info("Draw on the canvas to trigger real-time neural network inference.")
 
 # --- TAB 2: MNIST DATASET EXPLORER ---
 with tab2:
     st.header(" MNIST Dataset Explorer")
-    st.header("Visualizing sample 28x28 handwritten digit images (0 to 9) from the dataset.")
+    st.write("Visualizing sample 28x28 handwritten digit images (0 to 9) from the dataset.")
 
     X_mnist, y_mnist = load_or_augment_mnist_samples()
 
@@ -343,7 +349,7 @@ with tab2:
 # --- TAB 3: EMNIST DATASET EXPLORER ---
 with tab3:
     st.header(" EMNIST Dataset Explorer")
-    st.header("Visualizing sample 28x28 handwritten character images (A to Z) from the dataset.")
+    st.write("Visualizing sample 28x28 handwritten character images (A to Z) from the dataset.")
 
     X_emnist, y_emnist = load_or_augment_emnist_samples()
 
@@ -356,7 +362,7 @@ with tab3:
         if len(matching_indices) > 0:
             sample_img = X_emnist[matching_indices[0]].reshape(28, 28)
             ax.imshow(sample_img, cmap="gray")
-        ax.set_title(f"'{char}'", fontsize=20, fontweight="bold")
+        ax.set_title(f"'{char}'", fontsize=14, fontweight="bold")
         ax.axis("off")
 
     # Turn off leftover empty subplots in the 4x7 grid
@@ -364,4 +370,4 @@ with tab3:
         axes[idx].axis("off")
 
     plt.tight_layout()
-    st.pyplot(fig_grid) 
+    st.pyplot(fig_grid)
