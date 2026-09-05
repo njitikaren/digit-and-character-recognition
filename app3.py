@@ -259,8 +259,12 @@ with tab1:
         st.subheader(" Real-Time Neural Analytics")
 
         img_data = None
-        if canvas_result is not None and canvas_result.image_data is not None:
-            img_data = canvas_result.image_data
+        if canvas_result is not None:
+            try:
+                if getattr(canvas_result, "image_data", None) is not None:
+                    img_data = canvas_result.image_data
+            except RuntimeError:
+                img_data = None
 
         if img_data is not None and img_data.size > 0:
             input_vector = preprocess_canvas_image(img_data)
