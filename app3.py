@@ -178,32 +178,38 @@ def forward_pass(X, W1, b1, W2, b2):
 
 
 def preprocess_canvas_image(canvas_array):
-    """Preprocessing Pipeline: Converts RGBA canvas array into a normalized
+    """
+    Preprocessing Pipeline: Converts RGBA canvas array into a normalized
     (1, 784) grayscale vector centered by bounding box.
     """
     if canvas_array is None or canvas_array.size == 0:
         return None
 
-    # Handle RGBA image arrays correctly
+    # Process 3D RGBA/RGB image arrays from frontend
     if canvas_array.ndim == 3:
         rgb = canvas_array[:, :, :3]
-
+        
+        # Check if drawing contains alpha channel data
         if canvas_array.shape[2] == 4:
             alpha = canvas_array[:, :, 3]
-            # Handle transparent drawings or white strokes
-            if np.max(alpha) > 0 and np.max(rgb) == 0:
-                gray_arr = alpha.astype(np.uint8)
+            # Use alpha channel if present, otherwise sum RGB intensity
+            if np.max(alpha) > 0:
+                gray_arr = np.where(alpha > 0, np.max(rgb, axis=2), 0).astype(np.uint8)
+                # Fallback if stroke was pure white over black
+                if np.max(gray_arr) == 0:
+                    gray_arr = alpha.astype(np.uint8)
             else:
                 gray_arr = np.max(rgb, axis=2).astype(np.uint8)
         else:
             gray_arr = np.max(rgb, axis=2).astype(np.uint8)
 
-        if np.max(gray_arr) == 0:
-            return None  # Canvas is completely blank
-
+        # Threshold check to ignore minor noise/blank canvas
+        if np.max(gray_arr) < 10:
+            return None
+            
         img = Image.fromarray(gray_arr, mode="L")
     else:
-        if np.max(canvas_array) == 0:
+        if np.max(canvas_array) < 10:
             return None
         img = Image.fromarray(canvas_array.astype("uint8"), mode="L")
 
@@ -215,7 +221,7 @@ def preprocess_canvas_image(canvas_array):
     img_cropped = img.crop(bbox)
     img_cropped.thumbnail((20, 20), Image.Resampling.LANCZOS)
 
-    # Center in 28x28 grayscale array
+    # Center inside 28x28 matrix
     new_img = Image.new("L", (28, 28), 0)
     upper_left = (
         (28 - img_cropped.width) // 2,
@@ -225,7 +231,6 @@ def preprocess_canvas_image(canvas_array):
 
     img_matrix = np.array(new_img, dtype=np.float32) / 255.0
     return img_matrix.reshape(1, 784)
-
 
 # ==============================================================================
 # 4. DASHBOARD TAB NAVIGATION
